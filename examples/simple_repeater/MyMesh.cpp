@@ -1560,6 +1560,13 @@ void MyMesh::sendTelemetryMessage() {
   } else {
     hum_suffix[0] = '\0';
   }
+  float mcu_temp = board.getMCUTemperature();
+  char mcu_suffix[16];
+  if (telemFloatIsValid(mcu_temp)) {
+    sprintf(mcu_suffix, " M=%.1f°C", mcu_temp);
+  } else {
+    mcu_suffix[0] = '\0';
+  }
   uint32_t current_sent = getNumSentFlood() + getNumSentDirect();
   uint32_t repeated_packets = (last_sent_packets_count > 0) ? (current_sent - last_sent_packets_count) : 0;
   char msg[160];
@@ -1572,20 +1579,20 @@ void MyMesh::sendTelemetryMessage() {
     bool has_temp_minmax = telemFloatIsValid(temp_min) && telemFloatIsValid(temp_max);
     bool has_pressure_changes = telemFloatIsValid(pressure_change_4h) && telemFloatIsValid(pressure_change_12h);
     if (has_temp_minmax && has_pressure_changes) {
-      sprintf(msg, "%s: T=%.1f°C (min:%.1f max:%.1f) P=%.1fhPa (Δ4h:%+.1f Δ12h:%+.1f) V=%.2fV R=%lu%s",
-              _prefs.node_name, current_temp, temp_min, temp_max, current_pressure, pressure_change_4h, pressure_change_12h, batt_voltage, (unsigned long)repeated_packets, hum_suffix);
+      sprintf(msg, "%s: T=%.1f°C (min:%.1f max:%.1f) P=%.1fhPa (Δ4h:%+.1f Δ12h:%+.1f) V=%.2fV R=%lu%s%s",
+              _prefs.node_name, current_temp, temp_min, temp_max, current_pressure, pressure_change_4h, pressure_change_12h, batt_voltage, (unsigned long)repeated_packets, hum_suffix, mcu_suffix);
     } else if (has_temp_minmax) {
-      sprintf(msg, "%s: T=%.1f°C (min:%.1f max:%.1f) P=%.1fhPa V=%.2fV R=%lu%s",
-              _prefs.node_name, current_temp, temp_min, temp_max, current_pressure, batt_voltage, (unsigned long)repeated_packets, hum_suffix);
+      sprintf(msg, "%s: T=%.1f°C (min:%.1f max:%.1f) P=%.1fhPa V=%.2fV R=%lu%s%s",
+              _prefs.node_name, current_temp, temp_min, temp_max, current_pressure, batt_voltage, (unsigned long)repeated_packets, hum_suffix, mcu_suffix);
     } else if (has_pressure_changes) {
-      sprintf(msg, "%s: T=%.1f°C P=%.1fhPa (Δ4h:%+.1f Δ12h:%+.1f) V=%.2fV R=%lu%s",
-              _prefs.node_name, current_temp, current_pressure, pressure_change_4h, pressure_change_12h, batt_voltage, (unsigned long)repeated_packets, hum_suffix);
+      sprintf(msg, "%s: T=%.1f°C P=%.1fhPa (Δ4h:%+.1f Δ12h:%+.1f) V=%.2fV R=%lu%s%s",
+              _prefs.node_name, current_temp, current_pressure, pressure_change_4h, pressure_change_12h, batt_voltage, (unsigned long)repeated_packets, hum_suffix, mcu_suffix);
     } else {
-      sprintf(msg, "%s: T=%.1f°C P=%.1fhPa V=%.2fV R=%lu%s",
-              _prefs.node_name, current_temp, current_pressure, batt_voltage, (unsigned long)repeated_packets, hum_suffix);
+      sprintf(msg, "%s: T=%.1f°C P=%.1fhPa V=%.2fV R=%lu%s%s",
+              _prefs.node_name, current_temp, current_pressure, batt_voltage, (unsigned long)repeated_packets, hum_suffix, mcu_suffix);
     }
   } else {
-    sprintf(msg, "%s: V=%.2fV R=%lu%s", _prefs.node_name, batt_voltage, (unsigned long)repeated_packets, hum_suffix);
+    sprintf(msg, "%s: V=%.2fV R=%lu%s%s", _prefs.node_name, batt_voltage, (unsigned long)repeated_packets, hum_suffix, mcu_suffix);
   }
   uint32_t timestamp = getRTCClock()->getCurrentTime();
   uint8_t temp[5 + MAX_TEXT_LEN + 32];
